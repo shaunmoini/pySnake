@@ -25,29 +25,44 @@ gameWindow = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("pySnake")
 clock = pygame.time.Clock()
 
+# draw score to top left game window (during game)
 def drawScore(score):
   textSurface = SCORE_FONT.render("Score : " + str(score), True, WHITE)
   rect = textSurface.get_rect()
   rect.midtop = (WINDOW_WIDTH/10, 15)
   gameWindow.blit(textSurface, rect)
 
-def drawGameOver(finalScore):
+# draw game over screen (after game)
+def drawGameOver(finalScore, highScore):
   pygame.mixer.Sound.play(GAME_OVER_SOUND)
 
+  # game over text
   gameOverSurface = GAME_OVER_FONT.render("GAME OVER", True, RED)
   gameOverRect = gameOverSurface.get_rect()
-  gameOverRect.midtop = (WINDOW_WIDTH/2, WINDOW_WIDTH/4)
+  gameOverRect.midtop = (WINDOW_WIDTH / 2, WINDOW_WIDTH / 6)
   
+  # score text
   scoreSurface = SCORE_FONT.render("Score : " + str(finalScore), True, RED)
   scoreRect = scoreSurface.get_rect()
-  scoreRect.midtop = (WINDOW_WIDTH/2, WINDOW_HEIGHT/1.25)
+  scoreRect.midtop = (WINDOW_WIDTH / 1.5, WINDOW_HEIGHT / 1.75)
 
+  # high score text
+  highScoreSurface = SCORE_FONT.render("High Score : " + str(highScore), True, RED)
+  highScoreRect = highScoreSurface.get_rect()
+  highScoreRect.midtop = (WINDOW_WIDTH / 3, WINDOW_HEIGHT / 1.75)
+
+  # play again text
+  playAgainSurface = SCORE_FONT.render("Play again? [Y/n]", True, RED)
+  playAgainRect = playAgainSurface.get_rect()
+  playAgainRect.midtop = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 1.25)
+
+  # drawing and updating game window
   gameWindow.fill(BLACK)
   gameWindow.blit(gameOverSurface, gameOverRect)
   gameWindow.blit(scoreSurface, scoreRect)
-
+  gameWindow.blit(highScoreSurface, highScoreRect)
+  gameWindow.blit(playAgainSurface, playAgainRect)
   pygame.display.flip()
-  time.sleep(3)
 
 def runGame():
   # game variables
@@ -64,7 +79,8 @@ def runGame():
     for event in pygame.event.get():
       # pygame window closed
       if event.type == pygame.QUIT:
-        running = False
+        pygame.quit()
+        sys.exit(0)
       # key is pressed
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_UP:
@@ -84,13 +100,11 @@ def runGame():
     # out of bounds
     if snake[0][0] >= WINDOW_WIDTH or snake[0][0] < 0 or snake[0][1] >= WINDOW_HEIGHT or snake[0][1] < 0:
       running = False
-      drawGameOver(len(snake) - 3)
 
     # snake self collision
     for pixel in snake[1:]:
       if snake[0][0] == pixel[0] and snake[0][1] == pixel[1]:
         running = False
-        drawGameOver(len(snake) - 3)
 
     # snake direction verfication
     if snakeDirection != newSnakeDirection:
@@ -127,7 +141,30 @@ def runGame():
     drawScore(len(snake) - 3)
     pygame.display.update()
     clock.tick(SNAKE_SPEED)
-    
-runGame()
+  
+  return len(snake) - 3
+
+lastScore = runGame()
+highScore = lastScore
+drawGameOver(lastScore, highScore)
+
+# game over screen event handling
+gameEnd = False
+while not gameEnd:
+  for event in pygame.event.get():
+    # pygame window closed
+    if event.type == pygame.QUIT:
+      gameEnd = True
+    # key is pressed
+    if event.type == pygame.KEYDOWN:
+      if event.key == pygame.K_y or event.key == pygame.K_RETURN:
+        lastScore = runGame()
+        if lastScore > highScore:
+          highScore = lastScore
+        drawGameOver(lastScore, highScore)
+      if event.key == pygame.K_n or event.key == pygame.K_q:
+        gameEnd = True
+  clock.tick(SNAKE_SPEED)
+  
 pygame.quit()
 sys.exit(0)
